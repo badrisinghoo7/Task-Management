@@ -1,60 +1,74 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { CiHeart } from "react-icons/ci";
 import { FaEdit } from "react-icons/fa";
 import { MdDelete } from "react-icons/md";
 import { IoIosAddCircleOutline } from "react-icons/io";
+import axios from "axios";
+
 const Cards = ({ home, setInputshow }) => {
-  const data = [
-    {
-      title: "Task Management System",
-      description:
-        "A project management tool that helps teams organize tasks, set priorities, and manage workloads efficiently.",
-      status: "Complete",
-    },
-    {
-      title: "Online Portfolio Builder",
-      description:
-        "A web application that allows users to create and customize their portfolios. It includes various templates.",
-      status: "Incomplete",
-    },
-    {
-      title: "Timezone Converter",
-      description:
-        "An intuitive application that allows users to convert time across different time zones. ",
-      status: "Incomplete",
-    },
-    {
-      title: "E-commerce Product Page",
-      description:
-        "A dynamic and responsive product page for an online store. The page features product details,.",
-      status: "Incomplete",
-    },
-    {
-      title: "Virtual Event Platform",
-      description:
-        "An interactive platform designed for hosting virtual events, webinars, and conferences.",
-      status: "Complete",
-    },
-  ];
-  const [important, setImportant] = useState("Incomplete");
+  const [tasks, setTasks] = useState([]);
+
+  // Fetch tasks from the backend
+  useEffect(() => {
+    const fetchTasks = async () => {
+      try {
+        const response = await axios.get(
+          "https://task-backend-uaar.onrender.com/task/all"
+        );
+        setTasks(response.data.tasks);
+      } catch (error) {
+        console.error("Error fetching tasks:", error);
+      }
+    };
+    fetchTasks();
+  }, []);
+
+  // Function to handle task deletion
+  const deleteTask = async (id) => {
+    try {
+      await axios.delete(
+        `https://task-backend-uaar.onrender.com/task/delete/${id}`
+      );
+      setTasks(tasks.filter((task) => task._id !== id));
+    } catch (error) {
+      console.error("Error deleting task:", error);
+    }
+  };
+
+  // Function to handle task completion status toggle
+  const toggleTaskStatus = async (id, status) => {
+    try {
+      const updatedStatus = status === "Complete" ? "Incomplete" : "Complete";
+      const response = await axios.patch(
+        `https://task-backend-uaar.onrender.com/task/update/${id}`,
+        {
+          status: updatedStatus,
+        }
+      );
+      setTasks(tasks.map((task) => (task._id === id ? response.data : task)));
+    } catch (error) {
+      console.error("Error updating task status:", error);
+    }
+  };
 
   return (
     <div className="grid grid-cols-3 gap-4 p-4">
-      {data.map((item, i) => {
+      {tasks.map((task, i) => {
         return (
-          <div>
+          <div key={task._id}>
             <div className="p-4 border border-gray-200 rounded-xl justify-between">
-              <div key={i}>
-                <h3 className="text-xl font-semibold">{item.title}</h3>
-                <p className="text-gray-300 my-2">{item.description}</p>
+              <div>
+                <h3 className="text-xl font-semibold">{task.title}</h3>
+                <p className="text-gray-300 my-2">{task.description}</p>
               </div>
               <div className="mt-4 flex">
                 <button
                   className={`${
-                    item.status === "Complete" ? "bg-green-800" : "bg-red-400"
+                    task.status === "Complete" ? "bg-green-800" : "bg-red-400"
                   } p-2 rounded-md w-3/6 `}
+                  onClick={() => toggleTaskStatus(task._id, task.status)}
                 >
-                  {item.status}
+                  {task.status}
                 </button>
                 <div className="text-white p-2 w-3/6 text-2xl flex justify-around rounded-md">
                   <button>
@@ -63,7 +77,7 @@ const Cards = ({ home, setInputshow }) => {
                   <button>
                     <FaEdit />
                   </button>
-                  <button>
+                  <button onClick={() => deleteTask(task._id)}>
                     <MdDelete />
                   </button>
                 </div>
