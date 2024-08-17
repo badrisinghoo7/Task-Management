@@ -56,7 +56,26 @@ taskRouter.get("/details/:id", auth, async (req, res) => {
       return res.status(404).send({ msg: "Task not found" });
     }
 
-    res.send(task);
+    const currentDate = new Date();
+    const dueDate = new Date(task.dueDate);
+    let statusMessage = "";
+
+    if (dueDate < currentDate) {
+      statusMessage = "This task is overdue.";
+    } else if (
+      dueDate.getDate() === currentDate.getDate() &&
+      dueDate.getMonth() === currentDate.getMonth() &&
+      dueDate.getFullYear() === currentDate.getFullYear()
+    ) {
+      statusMessage = "This task is due today.";
+    } else {
+      statusMessage = `This task is due on ${dueDate.toDateString()}.`;
+    }
+
+    res.send({
+      task,
+      statusMessage,
+    });
   } catch (error) {
     res
       .status(500)
